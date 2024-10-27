@@ -82,7 +82,7 @@ func setTilesRandomly_rand(willModify bool) {
 var (
 	alpha       = 3.
 	beta        = 4.
-	n     int32 = 10
+	n     int32 = 9
 	seed  int64 = 100
 )
 
@@ -125,12 +125,10 @@ func setTilesRandomly_lehmer(willModify bool) {
 }
 
 func mapGenerationRoutine(willReset bool) {
-	setTilesRandomly_lehmer(!willReset)
-	lehmerSteps := 2
-	for i := 0; i < lehmerSteps; i++ {
-		setTilesRandomly_lehmer(true)
+	if willReset {
+		initTileMap()
 	}
-	perlinSteps := 8
+	perlinSteps := 4
 	for i := 0; i < perlinSteps; i++ {
 		setTilesRandomly_perlin(true)
 	}
@@ -146,6 +144,46 @@ func getColorFromTile_hsl(tile float64) rl.Color {
 	return rl.ColorFromHSV(float32(hue), 0.5, 0.75)
 }
 
+// Deep water: 0.0 - 0.2
+// Shallow water: 0.2 - 0.4
+// Sand: 0.4 - 0.5
+// Grass: 0.5 - 0.65
+// Forest: 0.65 - 0.8
+// Mountains: 0.8 - 0.9
+// High mountains: 0.9 - 1.0
+
+var deepWater = rl.NewColor(0, 0, 128, 255)
+var shallowWater = rl.NewColor(0, 0, 255, 255)
+var sand = rl.NewColor(240, 240, 64, 255)
+var grass = rl.NewColor(0, 255, 0, 255)
+var forest = rl.NewColor(0, 128, 0, 255)
+var dirt = rl.NewColor(128, 64, 0, 255)
+var mountains = rl.NewColor(128, 128, 128, 255)
+var highMountains = rl.NewColor(255, 255, 255, 255)
+
+func getColorFromSwitch(tile float64) rl.Color {
+	// Find the bucket that the tile value falls into
+	// using a switch statement
+	switch {
+	case tile < 0.18:
+		return deepWater
+	case tile < 0.3:
+		return shallowWater
+	case tile < 0.4:
+		return sand
+	case tile < 0.5:
+		return grass
+	case tile < 0.7:
+		return forest
+	case tile < 0.82:
+		return dirt
+	case tile < 0.95:
+		return mountains
+	default:
+		return highMountains
+	}
+}
+
 func main() {
 	lehmer = NewLehmer(rand.Int63())
 	initTileMap()
@@ -159,11 +197,11 @@ func main() {
 
 	for !rl.WindowShouldClose() {
 		rl.BeginDrawing()
-		rl.ClearBackground(rl.RayWhite)
+		// rl.ClearBackground(rl.RayWhite)
 
 		for i := 0; i < numTilesX; i++ {
 			for j := 0; j < numTilesY; j++ {
-				rl.DrawRectangle(int32(i*tileSizeX), int32(j*tileSizeY), int32(tileSizeX), int32(tileSizeY), getColorFromTile_hsl(tileMap[i][j]))
+				rl.DrawRectangle(int32(i*tileSizeX), int32(j*tileSizeY), int32(tileSizeX), int32(tileSizeY), getColorFromSwitch(tileMap[i][j]))
 			}
 		}
 		rl.DrawRectangle(5, int32(float32(windowHeight)*0.91), 320, 30, rl.Fade(rl.White, 0.5))
